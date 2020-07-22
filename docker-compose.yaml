@@ -1,0 +1,11 @@
+version: '3'
+services:
+  pick_up_bot:
+    container_name: pick_up_bot
+    build: .
+    env_file: 
+      - '.env'
+    restart: always
+    volumes: 
+        - './data:/app/data'
+        - './videos:/app/videos'
