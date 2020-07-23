@@ -217,6 +217,13 @@ func joinCaller(
 func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordgo.MessageCreate) {
 	connection, err := joinCaller(s, m)
 	if err != nil {
+		s.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf(
+				"<@%s> Unable to join voice channel %v!",
+				m.Author.ID, err,
+			),
+		)
 		return
 	}
 	plCh := make(chan error)
