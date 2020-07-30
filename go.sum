@@ -36,6 +36,8 @@ github.com/aws/aws-sdk-go v1.28.0/go.mod h1:KmX6BPdI08NWTb3/sm4ZGu5ShLoqVDhKgpiN
 github.com/benbjohnson/clock v1.0.0/go.mod h1:bGMdMPoPVvcYyt1gHDf4J2KE153Yf9BuiUKYMaxlTDM=
 github.com/bwmarrin/discordgo v0.21.1 h1:UI2PWwzvn5IFuscYcDc6QB/duhs9MUIjQ4HclcIZisc=
 github.com/bwmarrin/discordgo v0.21.1/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
+github.com/bwmarrin/discordgo v0.22.0 h1:uBxY1HmlVCsW1IuaPjpCGT6A2DBwRn0nvOguQIxDdFM=
+github.com/bwmarrin/discordgo v0.22.0/go.mod h1:c1WtWUGN6nREDmzIpyTp/iD3VYt4Fpx+bVyfBG7JE+M=
 github.com/capnm/sysinfo v0.0.0-20130621111458-5909a53897f3/go.mod h1:M5XHQLu90v2JNm/bW2tdsYar+5vhV0gEcBcmDBNAN1Y=
 github.com/census-instrumentation/opencensus-proto v0.2.1/go.mod h1:f6KPmirojxKA12rnyqOA5BBL4O983OfeGPqjHWSTneU=
 github.com/chzyer/logex v1.1.10/go.mod h1:+Ywpsq7O8HXn0nuIou7OrIPyXbp3wmkHB+jjWRnGsAI=
@@ -50,6 +52,7 @@ github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSs
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dgryski/go-farm v0.0.0-20191112170834-c2139c5d712b/go.mod h1:SqUrOPUnsFjfmXRMNPybcSiG0BgUW2AuFH8PAnS2iTw=
 github.com/dgryski/trifles v0.0.0-20200323201526-dd97f9abfb48/go.mod h1:if7Fbed8SFyPtHLHbg49SI7NAdJiC5WIA09pe59rfAA=
+github.com/divan/num2words v0.0.0-20170904212200-57dba452f942/go.mod h1:K88GQWK1aAiPMo9q2LZwyKBfEGnge7kmVVTUcZ61HSc=
 github.com/enriquebris/goconcurrentqueue v0.6.0 h1:DJ97cgoPVoqlC4tTGBokn/omaB3o16yIs5QdAm6YEjc=
 github.com/enriquebris/goconcurrentqueue v0.6.0/go.mod h1:wGJhQNFI4wLNHleZLo5ehk1puj8M6OIl0tOjs3kwJus=
 github.com/envoyproxy/go-control-plane v0.9.0/go.mod h1:YTl/9mNaCwkRvm6d1a2C3ymFceY/DCBVvsKhRF0iEA4=
@@ -154,6 +157,10 @@ github.com/rylio/ytdl v0.6.3 h1:qMpqet1af1JlmCL9jfOUnX3G4wILHVca9EARzhB11bo=
 github.com/rylio/ytdl v0.6.3/go.mod h1:0SwDCTvUv9LGujS+64aKAl0UAY3+ZnOBanbyHgR9zfA=
 github.com/sardap/discgov v0.0.0-20200720200808-ca92891c3282 h1:xiAklF5uSGGX6gZTeybZPLR4HUwI39cRzXSjOaYVeWE=
 github.com/sardap/discgov v0.0.0-20200720200808-ca92891c3282/go.mod h1:u+ro7MnuTp5HmNOCpkRIBL69adAXZC2338N9F/NHwbA=
+github.com/sardap/discgov v0.0.0-20200725235459-f22538ca35ce h1:xl+oWtiGRYR13i7KM9yccuHkw4D+wiGtfj+Ar4fwRHA=
+github.com/sardap/discgov v0.0.0-20200725235459-f22538ca35ce/go.mod h1:u+ro7MnuTp5HmNOCpkRIBL69adAXZC2338N9F/NHwbA=
+github.com/sardap/voterigging v0.0.0-20200730204624-606c0d9621ed h1:cMp7LJYzel/gm4Gh/9SUNlPonLXIHXyK7EkkdAxQ3zw=
+github.com/sardap/voterigging v0.0.0-20200730204624-606c0d9621ed/go.mod h1:u0LEFISVozojNdYppuKak3mF0FJeU32aftVEB4aEeas=
 github.com/satori/go.uuid v1.2.0/go.mod h1:dA0hQrYB0VpLJoorglMZABFdXlWrHn1NEOzdhQKdks0=
 github.com/shurcooL/sanitized_anchor_name v1.0.0/go.mod h1:1NzhyTcUVG4SuEtjjoZeVRXNmyL/1OwPU0+IJeTBvfc=
 github.com/stretchr/objx v0.1.0/go.mod h1:HFkY916IF+rwdDfMAkV7OtwuqBVzrE8GR6GFx+wExME=

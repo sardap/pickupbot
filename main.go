@@ -9,12 +9,14 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/rylio/ytdl"
 	"github.com/sardap/discgov"
 	"github.com/sardap/pickupbot/isitska"
 	"github.com/sardap/pickupbot/translator"
+	"github.com/sardap/voterigging"
 )
 
 const messageCommandPattern = "\\^pick it up\\$:"
@@ -395,6 +397,8 @@ func main() {
 	discord.AddHandler(discgov.UserVoiceTrackerHandler)
 	discord.AddHandler(voiceStateUpdate)
 	discord.AddHandler(messageCreate)
+	discord.AddHandler(voterigging.VoteReactCreateMessage)
+	discord.AddHandler(voterigging.VoteReactUpdateMessage)
 
 	// Open a websocket connection to Discord and begin listening.
 	err = discord.Open()
@@ -402,6 +406,14 @@ func main() {
 		fmt.Println("error opening connection,", err)
 		return
 	}
+
+	go func() {
+		time.Sleep(time.Duration(2) * time.Hour)
+		discord.ChannelMessageSend(
+			"731804345753927750",
+			"I want to be a citzen",
+		)
+	}()
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
