@@ -9,7 +9,6 @@ import (
 	"regexp"
 	"strings"
 	"syscall"
-	"time"
 
 	"github.com/bwmarrin/discordgo"
 	"github.com/rylio/ytdl"
@@ -406,14 +405,6 @@ func main() {
 		fmt.Println("error opening connection,", err)
 		return
 	}
-
-	go func() {
-		time.Sleep(time.Duration(2) * time.Hour)
-		discord.ChannelMessageSend(
-			"731804345753927750",
-			"I want to be a citzen",
-		)
-	}()
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
