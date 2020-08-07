@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"sync"
 	"time"
@@ -19,6 +18,12 @@ type guildVoice struct {
 	playing   *semaphore.Weighted
 	channel   string
 	playQueue *goconcurrentqueue.FIFO
+}
+
+type queueEntry struct {
+	filename    string
+	textChannel string
+	track       string
 }
 
 var (
@@ -51,26 +56,28 @@ func playLoop(
 ) {
 
 	for queue.GetLen() > 0 {
-		nextFileTmp, _ := queue.Dequeue()
-
-		fileName := nextFileTmp.(string)
+		topTemp, _ := queue.Dequeue()
+		top := topTemp.(queueEntry)
 
 		options := dca.StdEncodeOptions
 		options.RawOutput = true
 		options.Bitrate = 48
 		options.Volume = 100
 		options.Application = "audio"
-		encodingSession, err := dca.EncodeFile(fileName, options)
+		encodingSession, err := dca.EncodeFile(top.filename, options)
 		if err != nil {
 			continue
 		}
+
+		go s.ChannelMessageSend(
+			top.textChannel,
+			fmt.Sprintf("Now picking up %s", top.track),
+		)
 
 		v.Speaking(true)
 		done := make(chan error)
 		dca.NewStream(encodingSession, v, done)
 		err = <-done
-		if err != nil && err != io.EOF {
-		}
 		v.Speaking(false)
 		encodingSession.Cleanup()
 	}
@@ -89,9 +96,10 @@ func fileExists(filename string) bool {
 
 func playVideo(
 	s *discordgo.Session, v *discordgo.VoiceConnection,
-	videoInfo *ytdl.VideoInfo, plCh chan error,
+	txtCID string, videoInfo *ytdl.VideoInfo, plCh chan error,
 ) {
 	gvi := getGuildVoiceLock(v.GuildID)
+	gvi.channel = v.ChannelID
 
 	if videoInfo.Duration > time.Duration(10)*time.Minute {
 		plCh <- fmt.Errorf(
@@ -111,7 +119,9 @@ func playVideo(
 		}
 	}
 
-	gvi.playQueue.Enqueue(fileName)
+	gvi.playQueue.Enqueue(queueEntry{
+		fileName, txtCID, videoInfo.Title,
+	})
 
 	if gvi.playing.TryAcquire(1) {
 		go playLoop(s, v, gvi.playing, gvi.playQueue)

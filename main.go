@@ -18,7 +18,7 @@ import (
 	"github.com/sardap/voterigging"
 )
 
-const messageCommandPattern = "\\^pick it up\\$:"
+const messageCommandPattern = "pub\\$"
 const helpPattern = "help"
 const isItSkaPattern = "is this ska\\?"
 const playSomeSkaPattern = "play some ska!"
@@ -49,8 +49,8 @@ func init() {
 			handler: isItSkaCommand,
 			desc: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
 				"What it does? will return if found track is ska or not.\n" +
-				"Example: ^pick it up$: is this ska? title$ call me maybe\n" +
-				"Example: ^pick it up$: is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+				"Example: pub$ is this ska? title$ call me maybe\n" +
+				"Example: pub$ is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
 		},
 		commandInfo{
 			re:      regexp.MustCompile(helpPattern),
@@ -68,8 +68,8 @@ func init() {
 			handler: playThisSka,
 			desc: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
 				"What it does? Will play the given song if it's ska.\n" +
-				"Example: ^pick it up$: is this ska? title$ call me maybe\n" +
-				"Example: ^pick it up$: is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+				"Example: pub$ play this ska! title$ call me maybe\n" +
+				"Example: pub$ play this ska! url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
 		},
 	}
 }
@@ -228,7 +228,7 @@ func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordg
 		return
 	}
 	plCh := make(chan error)
-	go playVideo(s, connection, videoInfo, plCh)
+	go playVideo(s, connection, m.ChannelID, videoInfo, plCh)
 
 	err = <-plCh
 	if err != nil {
@@ -242,13 +242,6 @@ func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordg
 	} else {
 		s.MessageReactionAdd(
 			m.ChannelID, m.ID, "💦",
-		)
-		s.ChannelMessageSend(
-			m.ChannelID,
-			fmt.Sprintf(
-				"<@%s> Playing %s!",
-				m.Author.ID, videoInfo.Title,
-			),
 		)
 	}
 }
@@ -333,6 +326,7 @@ func printHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	for _, c := range commands {
 		message += c.desc + "\n"
+		message += "🏁\n"
 	}
 
 	s.ChannelMessageSend(
@@ -361,8 +355,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			s.ChannelMessageSend(
 				m.ChannelID,
 				fmt.Sprintf(
-					"<@%s> I don't recognize that command type \"pick it up$: help\" for info on commands",
-					m.Author.ID,
+					"<@%s> I don't recognize that command type \"%s help\" for info on commands",
+					m.Author.ID, messageCommandPattern,
 				),
 			)
 		}
@@ -370,6 +364,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
+	discgov.UserVoiceTrackerHandler(s, v)
 	gvi := getGuildVoiceLock(v.GuildID)
 
 	if v.UserID == s.State.User.ID {
@@ -379,7 +374,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 		return
 	}
 
-	if len(discgov.GetUsers(v.GuildID, gvi.channel)) == 1 {
+	if len(discgov.GetUsers(v.GuildID, gvi.channel)) == 0 {
 		s.ChannelVoiceJoin(v.GuildID, "", true, true)
 	}
 }
@@ -393,7 +388,6 @@ func main() {
 	}
 
 	// Register the messageCreate func as a callback for MessageCreate events.
-	discord.AddHandler(discgov.UserVoiceTrackerHandler)
 	discord.AddHandler(voiceStateUpdate)
 	discord.AddHandler(messageCreate)
 	discord.AddHandler(voterigging.VoteReactCreateMessage)
@@ -405,6 +399,8 @@ func main() {
 		fmt.Println("error opening connection,", err)
 		return
 	}
+
+	discord.UpdateStatus(-1, "🏁pub$ for help!🏁")
 
 	// Wait here until CTRL-C or other term signal is received.
 	fmt.Println("Bot is now running.  Press CTRL-C to exit.")
