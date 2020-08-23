@@ -190,42 +190,21 @@ func joinCaller(
 ) (voice *discordgo.VoiceConnection, err error) {
 	guild, err := s.State.Guild(m.GuildID)
 	if err != nil {
-		s.ChannelMessageSend(
-			m.ChannelID,
-			fmt.Sprintf(
-				"<@%s> could not get your discord server info are you in a server?",
-				m.Author.ID,
-			),
-		)
-		return
+		return nil, fmt.Errorf("could not find your discord server")
 	}
 
 	targetChannel, err := getUserChannel(m.GuildID, m.Author.ID, guild.Channels)
 	if err != nil {
-		s.ChannelMessageSend(
-			m.ChannelID,
-			fmt.Sprintf(
-				"<@%s> you must be in a channel on this server to pick it up!",
-				m.Author.ID,
-			),
-		)
-		return
+		return nil, fmt.Errorf("Must be in a channel on the target server to pick it up")
 	}
 
 	return s.ChannelVoiceJoin(m.GuildID, targetChannel, false, true)
 }
 
-func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordgo.MessageCreate) {
+func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordgo.MessageCreate) error {
 	connection, err := joinCaller(s, m)
 	if err != nil {
-		s.ChannelMessageSend(
-			m.ChannelID,
-			fmt.Sprintf(
-				"<@%s> Unable to join voice channel %v!",
-				m.Author.ID, err,
-			),
-		)
-		return
+		return err
 	}
 	plCh := make(chan error)
 	go playVideo(s, connection, m.ChannelID, videoInfo, plCh)
@@ -244,6 +223,8 @@ func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordg
 			m.ChannelID, m.ID, "💦",
 		)
 	}
+
+	return nil
 }
 
 func playThisSka(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -281,11 +262,20 @@ func playThisSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 		)
 		return
 	}
-	playVideoOuter(videoInfo, s, m)
+	err = playVideoOuter(videoInfo, s, m)
+	if err != nil {
+		s.ChannelMessageSend(
+			m.ChannelID,
+			fmt.Sprintf(
+				"<@%s> Unable to join voice channel %v!",
+				m.Author.ID, err,
+			),
+		)
+	}
 }
 
 func playSomeSka(s *discordgo.Session, m *discordgo.MessageCreate) {
-	tracks, err := skaInvoker.GetNSka(5)
+	tracks, err := skaInvoker.GetNSka(9)
 	if err != nil {
 		s.ChannelMessageSend(
 			m.ChannelID,
@@ -297,7 +287,6 @@ func playSomeSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	count := 0
 	for _, track := range tracks {
 		videoInfo, err := translator.ToYTURL(track.Title, track.Artists)
 		if err != nil {
@@ -305,17 +294,18 @@ func playSomeSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 			continue
 		}
 
-		playVideoOuter(videoInfo, s, m)
-		count++
+		err = playVideoOuter(videoInfo, s, m)
+		if err != nil {
+			s.ChannelMessageSend(
+				m.ChannelID,
+				fmt.Sprintf(
+					"<@%s> Unable to join voice channel %v!",
+					m.Author.ID, err,
+				),
+			)
+			return
+		}
 	}
-
-	s.ChannelMessageSend(
-		m.ChannelID,
-		fmt.Sprintf(
-			"<@%s> Enqueued %d ska songs",
-			m.Author.ID, count,
-		),
-	)
 }
 
 func printHelp(s *discordgo.Session, m *discordgo.MessageCreate) {

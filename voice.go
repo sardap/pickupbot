@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"os"
 	"sync"
 	"time"
@@ -21,7 +22,7 @@ type guildVoice struct {
 }
 
 type queueEntry struct {
-	filename    string
+	videoInfo   *ytdl.VideoInfo
 	textChannel string
 	track       string
 }
@@ -50,29 +51,67 @@ func getGuildVoiceLock(guildID string) *guildVoice {
 	return res
 }
 
+func getVideo(info *ytdl.VideoInfo) string {
+	fileName := db.GetVideoPath(info.ID)
+
+	if fileName == "" {
+		fileName, _ = db.NewVideo(info)
+	}
+
+	return fileName
+}
+
 func playLoop(
 	s *discordgo.Session, v *discordgo.VoiceConnection,
 	playing *semaphore.Weighted, queue *goconcurrentqueue.FIFO,
 ) {
+	defer playing.Release(1)
+	defer s.ChannelVoiceJoin(v.GuildID, "", false, false)
 
-	for queue.GetLen() > 0 {
-		topTemp, _ := queue.Dequeue()
-		top := topTemp.(queueEntry)
+	var next *queueEntry
+	for v.ChannelID != "" {
+		var fileName string
+		var track string
+		var cID string
+		if next == nil {
+			topTemp, err := queue.Dequeue()
+			if err != nil {
+				return
+			}
+			top := topTemp.(queueEntry)
+
+			fileName = getVideo(top.videoInfo)
+			track = top.track
+			cID = top.textChannel
+		} else {
+			fileName = getVideo(next.videoInfo)
+			track = next.track
+			cID = next.textChannel
+		}
+
+		next = nil
+		go func() {
+			topTemp, err := queue.Dequeue()
+			if err != nil {
+				return
+			}
+			top := topTemp.(queueEntry)
+			getVideo(top.videoInfo)
+			next = &top
+			log.Printf("got next ready\n")
+		}()
 
 		options := dca.StdEncodeOptions
 		options.RawOutput = true
 		options.Bitrate = 48
 		options.Volume = 100
 		options.Application = "audio"
-		encodingSession, err := dca.EncodeFile(top.filename, options)
+		encodingSession, err := dca.EncodeFile(fileName, options)
 		if err != nil {
 			continue
 		}
 
-		go s.ChannelMessageSend(
-			top.textChannel,
-			fmt.Sprintf("Now picking up %s", top.track),
-		)
+		go s.ChannelMessageSend(cID, fmt.Sprintf("Now picking up %s", track))
 
 		v.Speaking(true)
 		done := make(chan error)
@@ -81,9 +120,6 @@ func playLoop(
 		v.Speaking(false)
 		encodingSession.Cleanup()
 	}
-
-	playing.Release(1)
-	s.ChannelVoiceJoin(v.GuildID, "", false, false)
 }
 
 func fileExists(filename string) bool {
@@ -108,19 +144,9 @@ func playVideo(
 		)
 		return
 	}
-	fileName := db.GetVideoPath(videoInfo.ID)
-
-	if fileName == "" {
-		var err error
-		fileName, err = db.NewVideo(videoInfo)
-		if err != nil {
-			plCh <- err
-			return
-		}
-	}
 
 	gvi.playQueue.Enqueue(queueEntry{
-		fileName, txtCID, videoInfo.Title,
+		videoInfo, txtCID, videoInfo.Title,
 	})
 
 	if gvi.playing.TryAcquire(1) {

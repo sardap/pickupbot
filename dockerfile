@@ -1,7 +1,7 @@
 FROM golang:latest as builder
 
 WORKDIR /app
-COPY . . 
+COPY . .
 RUN go build -o main .
 
 # Backend
