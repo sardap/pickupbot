@@ -25,14 +25,6 @@ const playSomeSkaPattern = "play some ska!"
 const playThisSkaPattern = "play this ska"
 const isSkaParsePattern = "((artist\\$ (?P<artist>.*?))?title\\$ (?P<title>.*)|url\\$ (?P<url>(https:\\/\\/open\\.spotify\\.com/track/([a-zA-Z0-9]+)))(.*))"
 
-type commandHandler func(s *discordgo.Session, m *discordgo.MessageCreate)
-
-type commandInfo struct {
-	re      *regexp.Regexp
-	handler commandHandler
-	desc    string
-}
-
 var (
 	commandSet *discom.CommandSet
 	skaInvoker isitska.Invoker
