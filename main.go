@@ -13,9 +13,9 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/rylio/ytdl"
 	"github.com/sardap/discgov"
+	"github.com/sardap/discom"
 	"github.com/sardap/pickupbot/isitska"
 	"github.com/sardap/pickupbot/translator"
-	"github.com/sardap/voterigging"
 )
 
 const messageCommandPattern = "pub\\$"
@@ -34,7 +34,7 @@ type commandInfo struct {
 }
 
 var (
-	commands   []commandInfo
+	commandSet *discom.CommandSet
 	skaInvoker isitska.Invoker
 )
 
@@ -43,34 +43,36 @@ func init() {
 		Endpoint: os.Getenv("IS_IT_SKA_ENDPOINT"),
 	}
 
-	commands = []commandInfo{
-		commandInfo{
-			re:      regexp.MustCompile(isItSkaPattern),
-			handler: isItSkaCommand,
-			desc: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-				"What it does? will return if found track is ska or not.\n" +
-				"Example: pub$ is this ska? title$ call me maybe\n" +
-				"Example: pub$ is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
-		},
-		commandInfo{
-			re:      regexp.MustCompile(helpPattern),
-			handler: printHelp,
-			desc:    "help command prints this message",
-		},
-		commandInfo{
-			re:      regexp.MustCompile(playSomeSkaPattern),
-			handler: playSomeSka,
-			desc: "play some ska!\n" +
-				"Will join your chat channel and play ska.",
-		},
-		commandInfo{
-			re:      regexp.MustCompile(playThisSkaPattern),
-			handler: playThisSka,
-			desc: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-				"What it does? Will play the given song if it's ska.\n" +
-				"Example: pub$ play this ska! title$ call me maybe\n" +
-				"Example: pub$ play this ska! url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
-		},
+	commandSet = discom.CreateCommandSet(false, regexp.MustCompile("\\$pub\\$"))
+
+	err := commandSet.AddCommand(discom.Command{
+		Re: regexp.MustCompile(isItSkaPattern), Handler: isItSkaCommand,
+		Description: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
+			"What it does? will return if found track is ska or not.\n" +
+			"Example: pub$ is this ska? title$ call me maybe\n" +
+			"Example: pub$ is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = commandSet.AddCommand(discom.Command{
+		Re: regexp.MustCompile(playSomeSkaPattern), Handler: playSomeSka,
+		Description: "Will join your chat channel and play ska.",
+	})
+	if err != nil {
+		panic(err)
+	}
+
+	err = commandSet.AddCommand(discom.Command{
+		Re: regexp.MustCompile(playThisSkaPattern), Handler: playThisSka,
+		Description: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
+			"What it does? Will play the given song if it's ska.\n" +
+			"Example: pub$ play this ska! title$ call me maybe\n" +
+			"Example: pub$ play this ska! url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+	})
+	if err != nil {
+		panic(err)
 	}
 }
 
@@ -308,51 +310,6 @@ func playSomeSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
-func printHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
-	message := fmt.Sprintf(
-		"<@%s> this is a program for picking it up. Commands are\n",
-		m.Author.ID,
-	)
-
-	for _, c := range commands {
-		message += c.desc + "\n"
-		message += "🏁\n"
-	}
-
-	s.ChannelMessageSend(
-		m.ChannelID,
-		message,
-	)
-}
-
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	re := regexp.MustCompile(messageCommandPattern)
-	if re.Match([]byte(strings.ToLower(m.Content))) {
-		triggered := false
-		for _, c := range commands {
-			if c.re.Match([]byte(strings.ToLower(m.Content))) {
-				go c.handler(s, m)
-				triggered = true
-				break
-			}
-		}
-
-		if !triggered {
-			s.ChannelMessageSend(
-				m.ChannelID,
-				fmt.Sprintf(
-					"<@%s> I don't recognize that command type \"%s help\" for info on commands",
-					m.Author.ID, messageCommandPattern,
-				),
-			)
-		}
-	}
-}
-
 func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 	discgov.UserVoiceTrackerHandler(s, v)
 	gvi := getGuildVoiceLock(v.GuildID)
@@ -379,9 +336,7 @@ func main() {
 
 	// Register the messageCreate func as a callback for MessageCreate events.
 	discord.AddHandler(voiceStateUpdate)
-	discord.AddHandler(messageCreate)
-	discord.AddHandler(voterigging.VoteReactCreateMessage)
-	discord.AddHandler(voterigging.VoteReactUpdateMessage)
+	discord.AddHandler(commandSet.Handler)
 
 	// Open a websocket connection to Discord and begin listening.
 	err = discord.Open()

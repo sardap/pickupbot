@@ -13,6 +13,7 @@ require (
 	github.com/pkg/errors v0.9.1
 	github.com/rylio/ytdl v0.6.3
 	github.com/sardap/discgov v0.0.0-20200725235459-f22538ca35ce
+	github.com/sardap/discom v0.0.0-20200811063056-130913888eb7
 	github.com/sardap/voterigging v0.0.0-20200731030947-85b639570ec6
 	golang.org/x/crypto v0.0.0-20200709230013-948cd5f35899 // indirect
 	golang.org/x/sync v0.0.0-20200625203802-6e8e738ad208

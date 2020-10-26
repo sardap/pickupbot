@@ -159,6 +159,8 @@ github.com/sardap/discgov v0.0.0-20200720200808-ca92891c3282 h1:xiAklF5uSGGX6gZT
 github.com/sardap/discgov v0.0.0-20200720200808-ca92891c3282/go.mod h1:u+ro7MnuTp5HmNOCpkRIBL69adAXZC2338N9F/NHwbA=
 github.com/sardap/discgov v0.0.0-20200725235459-f22538ca35ce h1:xl+oWtiGRYR13i7KM9yccuHkw4D+wiGtfj+Ar4fwRHA=
 github.com/sardap/discgov v0.0.0-20200725235459-f22538ca35ce/go.mod h1:u+ro7MnuTp5HmNOCpkRIBL69adAXZC2338N9F/NHwbA=
+github.com/sardap/discom v0.0.0-20200811063056-130913888eb7 h1:RIQRQuclXWwml7OKWnXQMkYHQ0JshkGKFBuwmbIFkio=
+github.com/sardap/discom v0.0.0-20200811063056-130913888eb7/go.mod h1:rPnWOOILDR8c7sVunTE9GEkPn3i32IoRSp+CNWIGOAg=
 github.com/sardap/voterigging v0.0.0-20200730204624-606c0d9621ed h1:cMp7LJYzel/gm4Gh/9SUNlPonLXIHXyK7EkkdAxQ3zw=
 github.com/sardap/voterigging v0.0.0-20200730204624-606c0d9621ed/go.mod h1:u0LEFISVozojNdYppuKak3mF0FJeU32aftVEB4aEeas=
 github.com/sardap/voterigging v0.0.0-20200730235353-e4d2e2cee03a h1:PvTil2TjwSCglU3fJ5Hyg/NHskTBkPFdHwneOgmTg24=
