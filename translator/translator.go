@@ -1,48 +1,32 @@
 package translator
 
 import (
-	"context"
 	"errors"
 	"fmt"
 	"math"
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/agnivade/levenshtein"
-	"github.com/go-redis/redis"
-	"github.com/rylio/ytdl"
+	ytdl "github.com/kkdai/youtube/v2"
+	"github.com/sardap/pickupbot/db"
 	"google.golang.org/api/googleapi/transport"
 	"google.golang.org/api/youtube/v3"
 )
 
 var (
 	developerKey string = os.Getenv("YOUTUBE_API_KEY")
-	rClient      *redis.Client
 )
 
-func init() {
-	dbNum, err := strconv.Atoi(os.Getenv("REDIS_DB_NUMBER"))
-	if err != nil {
-		panic(err)
-	}
-
-	rClient = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_ADDRESS"),
-		Password: os.Getenv("REDIS_PASSWORD"), // no password set
-		DB:       dbNum,                       // use default DB
-	})
-}
-
 //ToYTURL ToYTURL
-func ToYTURL(title string, artists []string) (*ytdl.VideoInfo, error) {
+func ToYTURL(title string, artists []string) (*ytdl.Video, error) {
 	query := fmt.Sprintf("%s - %s", title, artists[0])
 	queryB := fmt.Sprintf("%s - %s", artists[0], title)
 
 	var videoID string
-	cache := rClient.Get(query)
+	cache := db.GetClient().Get(query)
 	if cache.Val() != "" {
 		videoID = cache.Val()
 	} else {
@@ -85,9 +69,10 @@ func ToYTURL(title string, artists []string) (*ytdl.VideoInfo, error) {
 			return nil, errors.New("Could not find match on youtube")
 		}
 
-		rClient.SetNX(query, bestID, time.Duration(120)*time.Hour)
+		db.GetClient().SetNX(query, bestID, time.Duration(120)*time.Hour)
 		videoID = bestID
 	}
 
-	return ytdl.DefaultClient.GetVideoInfoFromID(context.TODO(), videoID)
+	client := ytdl.Client{}
+	return client.GetVideo(videoID)
 }

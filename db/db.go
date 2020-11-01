@@ -1,81 +1,58 @@
 package db
 
 import (
-	"context"
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
+	"io"
 	"os"
-	"sync"
+	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
-	"github.com/rylio/ytdl"
+	"github.com/go-redis/redis"
+	"github.com/kkdai/youtube/v2"
 )
 
-type videoInfo struct {
-	Path           string    `json:"path"`
-	LastUpdateTime time.Time `json:"last_update_time"`
-}
-
-type videosInfo struct {
-	Data map[string]videoInfo `json:"data"`
-}
-
 var (
-	infoLock   *sync.RWMutex
-	data       videosInfo
-	dbFilePath string
+	rClient *redis.Client
 )
 
 func init() {
-	infoLock = &sync.RWMutex{}
+	go cleanOld()
 
-	dbFilePath = os.Getenv("DB_FILE_PATH")
-
-	reader, err := os.Open(dbFilePath)
-	if err == nil {
-		err = json.NewDecoder(reader).Decode(&data)
-		if err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		data = videosInfo{
-			Data: make(map[string]videoInfo),
-		}
-		data.Save()
+	dbNum, err := strconv.Atoi(os.Getenv("REDIS_DB_NUMBER"))
+	if err != nil {
+		panic(err)
 	}
 
-	go cleanOld()
+	rClient = redis.NewClient(&redis.Options{
+		Addr:     os.Getenv("REDIS_ADDRESS"),
+		Password: os.Getenv("REDIS_PASSWORD"), // no password set
+		DB:       dbNum,                       // use default DB
+	})
 }
 
-func (v *videosInfo) Save() {
-	encoded, err := json.Marshal(*v)
-	if err != nil {
-		log.Fatal(err)
-	}
-	err = ioutil.WriteFile(dbFilePath, encoded, 0644)
+//GetClient returns redis client
+func GetClient() *redis.Client {
+	return rClient
 }
 
 //GetVideoPath GetVideoPath
 func GetVideoPath(id string) string {
-	infoLock.Lock()
-	defer infoLock.Unlock()
-	result, ok := data.Data[id]
-	if !ok {
-		return ""
-	}
-	result.LastUpdateTime = time.Now().UTC()
-	data.Save()
-	return result.Path
+	return rClient.Get(id).Val()
 }
 
 //NewVideo NewVideo
-func NewVideo(ytVideoInfo *ytdl.VideoInfo) (string, error) {
-	infoLock.Lock()
-	defer infoLock.Unlock()
-	path := fmt.Sprintf("videos/%s.mp4", ytVideoInfo.ID)
-	data.Data[ytVideoInfo.ID] = videoInfo{path, time.Now().UTC()}
+func NewVideo(video *youtube.Video) (string, error) {
+	path := fmt.Sprintf("videos/%s.mp4", video.ID)
+
+	client := youtube.Client{}
+	resp, err := client.GetStream(video, &video.Formats[0])
+	if err != nil {
+		rClient.Del()
+		return "", err
+	}
+	defer resp.Body.Close()
 
 	file, err := os.Create(path)
 	if err != nil {
@@ -83,41 +60,37 @@ func NewVideo(ytVideoInfo *ytdl.VideoInfo) (string, error) {
 	}
 	defer file.Close()
 
-	client := ytdl.DefaultClient
-	err = client.Download(
-		context.TODO(), ytVideoInfo,
-		ytVideoInfo.Formats[0], file,
-	)
+	_, err = io.Copy(file, resp.Body)
 	if err != nil {
-		return "", nil
+		panic(err)
 	}
 
-	data.Save()
+	rClient.SetNX(video.ID, path, time.Duration(1)*time.Hour)
 	return path, nil
 }
 
 func cleanOld() {
+	return
 	for {
-		cutOffDate := time.Now().UTC().Add(-time.Duration(48) * time.Hour)
-
-		infoLock.Lock()
-		removeStack := make([]string, 0)
-		for k, v := range data.Data {
-			if v.LastUpdateTime.Before(cutOffDate) {
-				removeStack = append(removeStack, k)
+		err := filepath.Walk(os.Getenv("VIDEOS_PATH"), func(path string, info os.FileInfo, err error) error {
+			if err != nil {
+				return err
 			}
-		}
 
-		for _, k := range removeStack {
-			path := data.Data[k].Path
-			log.Printf("Deleting %s", path)
-			err := os.Remove(path)
-			if err == nil {
-				delete(data.Data, k)
+			if info.IsDir() {
+				return nil
 			}
+
+			_, id := filepath.Split(path)
+			id = strings.TrimSuffix(id, filepath.Ext(path))
+			if rClient.Get(id).Val() == "" {
+				os.Remove(path)
+			}
+			return nil
+		})
+		if err != nil {
+			panic(err)
 		}
-		data.Save()
-		infoLock.Unlock()
 
 		time.Sleep(time.Duration(60) * time.Second)
 	}

@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/bwmarrin/discordgo"
-	"github.com/rylio/ytdl"
+	"github.com/kkdai/youtube/v2"
 	"github.com/sardap/discgov"
 	"github.com/sardap/discom"
 	"github.com/sardap/pickupbot/isitska"
@@ -195,7 +195,7 @@ func joinCaller(
 	return s.ChannelVoiceJoin(m.GuildID, targetChannel, false, true)
 }
 
-func playVideoOuter(videoInfo *ytdl.VideoInfo, s *discordgo.Session, m *discordgo.MessageCreate) error {
+func playVideoOuter(videoInfo *youtube.Video, s *discordgo.Session, m *discordgo.MessageCreate) error {
 	connection, err := joinCaller(s, m)
 	if err != nil {
 		return err

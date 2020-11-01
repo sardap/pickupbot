@@ -10,7 +10,7 @@ import (
 	"github.com/bwmarrin/discordgo"
 	"github.com/enriquebris/goconcurrentqueue"
 	"github.com/jonas747/dca"
-	"github.com/rylio/ytdl"
+	"github.com/kkdai/youtube/v2"
 	"github.com/sardap/pickupbot/db"
 	"golang.org/x/sync/semaphore"
 )
@@ -22,7 +22,7 @@ type guildVoice struct {
 }
 
 type queueEntry struct {
-	videoInfo   *ytdl.VideoInfo
+	videoInfo   *youtube.Video
 	textChannel string
 	track       string
 }
@@ -51,14 +51,15 @@ func getGuildVoiceLock(guildID string) *guildVoice {
 	return res
 }
 
-func getVideo(info *ytdl.VideoInfo) string {
+func getVideo(info *youtube.Video) (string, error) {
+	var err error
 	fileName := db.GetVideoPath(info.ID)
 
 	if fileName == "" {
-		fileName, _ = db.NewVideo(info)
+		fileName, err = db.NewVideo(info)
 	}
 
-	return fileName
+	return fileName, err
 }
 
 func playLoop(
@@ -79,14 +80,12 @@ func playLoop(
 				return
 			}
 			top := topTemp.(queueEntry)
-
-			fileName = getVideo(top.videoInfo)
-			track = top.track
-			cID = top.textChannel
-		} else {
-			fileName = getVideo(next.videoInfo)
-			track = next.track
-			cID = next.textChannel
+			next = &top
+		}
+		fileName, err := getVideo(next.videoInfo)
+		if err != nil {
+			s.ChannelMessageSend(cID, fmt.Sprintf("Unable to play %v %v", track, err))
+			return
 		}
 
 		next = nil
@@ -132,7 +131,7 @@ func fileExists(filename string) bool {
 
 func playVideo(
 	s *discordgo.Session, v *discordgo.VoiceConnection,
-	txtCID string, videoInfo *ytdl.VideoInfo, plCh chan error,
+	txtCID string, videoInfo *youtube.Video, plCh chan error,
 ) {
 	gvi := getGuildVoiceLock(v.GuildID)
 	gvi.channel = v.ChannelID
