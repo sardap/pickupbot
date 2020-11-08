@@ -42,7 +42,7 @@ func ToYTURL(title string, artists []string) (*ytdl.Video, error) {
 		call := service.Search.List([]string{"id", "snippet"}).Q(query).MaxResults(50)
 		response, err := call.Do()
 		if err != nil {
-			return nil, errors.New("Could not find match on youtube")
+			return nil, err
 		}
 
 		// Group video, channel, and playlist results in separate lists.
@@ -69,7 +69,7 @@ func ToYTURL(title string, artists []string) (*ytdl.Video, error) {
 			return nil, errors.New("Could not find match on youtube")
 		}
 
-		db.GetClient().SetNX(query, bestID, time.Duration(120)*time.Hour)
+		db.GetClient().SetNX(query, bestID, time.Duration(24*365)*time.Hour)
 		videoID = bestID
 	}
 

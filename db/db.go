@@ -70,7 +70,6 @@ func NewVideo(video *youtube.Video) (string, error) {
 }
 
 func cleanOld() {
-	return
 	for {
 		err := filepath.Walk(os.Getenv("VIDEOS_PATH"), func(path string, info os.FileInfo, err error) error {
 			if err != nil {
