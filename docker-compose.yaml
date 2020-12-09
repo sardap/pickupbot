@@ -2,14 +2,16 @@ version: '3'
 services:
   pick_up_bot_redis:
     container_name: pick_up_bot_redis
-    image: 'docker.io/bitnami/redis:6.0-debian-10'
+    image: 'bitnami/redis:6.0.9'
     environment:
         - ALLOW_EMPTY_PASSWORD=yes
-        # - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
+        - REDIS_PASSWORD=password
+        - REDIS_DISABLE_COMMANDS=FLUSHDB,FLUSHALL
     ports:
-        - '6380:6380'
+        - '6379:6380'
     volumes:
-        - './data:/bitnami/redis/data'  
+      - './data:/bitnami/redis/data'
+      
   pick_up_bot:
     container_name: pick_up_bot
     build: .

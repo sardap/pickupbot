@@ -82,6 +82,8 @@ func playLoop(
 			top := topTemp.(queueEntry)
 			next = &top
 		}
+		cID = next.textChannel
+		track = next.track
 		fileName, err := getVideo(next.videoInfo)
 		if err != nil {
 			s.ChannelMessageSend(cID, fmt.Sprintf("Unable to play %v %v", track, err))

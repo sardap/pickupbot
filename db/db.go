@@ -4,52 +4,54 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 
-	"github.com/go-redis/redis"
 	"github.com/kkdai/youtube/v2"
+	"github.com/sardap/pickupbot/env"
+	bolt "go.etcd.io/bbolt"
 )
 
 var (
-	rClient *redis.Client
+	dbClient   *bolt.DB
+	bucketName = []byte("SKA_SONGS")
 )
 
-func init() {
-	go cleanOld()
-
-	dbNum, err := strconv.Atoi(os.Getenv("REDIS_DB_NUMBER"))
+//Connect init connection to DB
+func Connect() {
+	var err error
+	dbClient, err = bolt.Open(env.DBPath, 0666, nil)
 	if err != nil {
 		panic(err)
 	}
 
-	rClient = redis.NewClient(&redis.Options{
-		Addr:     os.Getenv("REDIS_ADDRESS"),
-		Password: os.Getenv("REDIS_PASSWORD"), // no password set
-		DB:       dbNum,                       // use default DB
+	err = dbClient.Update(func(tx *bolt.Tx) error {
+		_, err := tx.CreateBucketIfNotExists(bucketName)
+		return err
 	})
-}
-
-//GetClient returns redis client
-func GetClient() *redis.Client {
-	return rClient
+	if err != nil {
+		panic(err)
+	}
 }
 
 //GetVideoPath GetVideoPath
 func GetVideoPath(id string) string {
-	return rClient.Get(id).Val()
+	var result string
+	dbClient.View(func(tx *bolt.Tx) error {
+		val := tx.Bucket(bucketName).Get([]byte(id))
+		if val != nil {
+			result = string(val)
+		}
+		return nil
+	})
+	return result
 }
 
-//NewVideo NewVideo
+//NewVideo adds a new video to the DB
 func NewVideo(video *youtube.Video) (string, error) {
 	path := fmt.Sprintf("videos/%s.mp4", video.ID)
 
 	client := youtube.Client{}
 	resp, err := client.GetStream(video, &video.Formats[0])
 	if err != nil {
-		rClient.Del()
 		return "", err
 	}
 	defer resp.Body.Close()
@@ -65,32 +67,35 @@ func NewVideo(video *youtube.Video) (string, error) {
 		panic(err)
 	}
 
-	rClient.SetNX(video.ID, path, time.Duration(1)*time.Hour)
+	dbClient.Update(func(tx *bolt.Tx) error {
+		tx.Bucket(bucketName).Put(
+			[]byte(video.ID), []byte(path),
+		)
+		return nil
+	})
 	return path, nil
 }
 
-func cleanOld() {
-	for {
-		err := filepath.Walk(os.Getenv("VIDEOS_PATH"), func(path string, info os.FileInfo, err error) error {
-			if err != nil {
-				return err
-			}
+//SaveYTSearch saves a query with result in the DB
+func SaveYTSearch(query, bestID string) {
+	dbClient.Update(func(tx *bolt.Tx) error {
+		return tx.Bucket(bucketName).Put(
+			[]byte(query), []byte(bestID),
+		)
+	})
+}
 
-			if info.IsDir() {
-				return nil
-			}
-
-			_, id := filepath.Split(path)
-			id = strings.TrimSuffix(id, filepath.Ext(path))
-			if rClient.Get(id).Val() == "" {
-				os.Remove(path)
-			}
-			return nil
-		})
-		if err != nil {
-			panic(err)
+//GetYTSearch gets a query with result in the DB
+func GetYTSearch(query string) string {
+	var result string
+	dbClient.View(func(tx *bolt.Tx) error {
+		val := tx.Bucket(bucketName).Get(
+			[]byte(query),
+		)
+		if val != nil {
+			result = string(val)
 		}
-
-		time.Sleep(time.Duration(60) * time.Second)
-	}
+		return nil
+	})
+	return result
 }

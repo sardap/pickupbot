@@ -14,12 +14,12 @@ import (
 	"github.com/kkdai/youtube/v2"
 	"github.com/sardap/discgov"
 	"github.com/sardap/discom"
+	"github.com/sardap/pickupbot/db"
+	"github.com/sardap/pickupbot/env"
 	"github.com/sardap/pickupbot/isitska"
 	"github.com/sardap/pickupbot/translator"
 )
 
-const messageCommandPattern = "pub\\$"
-const helpPattern = "help"
 const isItSkaPattern = "is this ska\\?"
 const playSomeSkaPattern = "play some ska!"
 const playThisSkaPattern = "play this ska"
@@ -31,14 +31,17 @@ var (
 )
 
 func init() {
+	db.Connect()
+
 	skaInvoker = isitska.Invoker{
-		Endpoint: os.Getenv("IS_IT_SKA_ENDPOINT"),
+		Endpoint: env.IsItSkaEndpoint,
 	}
 
-	commandSet = discom.CreateCommandSet(false, regexp.MustCompile("\\$pub\\$"))
+	commandSet = discom.CreateCommandSet(regexp.MustCompile(env.CmdPrefix))
 
 	err := commandSet.AddCommand(discom.Command{
-		Re: regexp.MustCompile(isItSkaPattern), Handler: isItSkaCommand,
+		Re:      regexp.MustCompile(isItSkaPattern),
+		Handler: isItSkaCommand, CaseInSense: true,
 		Description: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
 			"What it does? will return if found track is ska or not.\n" +
 			"Example: pub$ is this ska? title$ call me maybe\n" +
@@ -49,7 +52,8 @@ func init() {
 	}
 
 	err = commandSet.AddCommand(discom.Command{
-		Re: regexp.MustCompile(playSomeSkaPattern), Handler: playSomeSka,
+		Re:      regexp.MustCompile(playSomeSkaPattern),
+		Handler: playSomeSka, CaseInSense: true,
 		Description: "Will join your chat channel and play ska.",
 	})
 	if err != nil {
@@ -57,7 +61,8 @@ func init() {
 	}
 
 	err = commandSet.AddCommand(discom.Command{
-		Re: regexp.MustCompile(playThisSkaPattern), Handler: playThisSka,
+		Re:      regexp.MustCompile(playThisSkaPattern),
+		Handler: playThisSka, CaseInSense: true,
 		Description: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
 			"What it does? Will play the given song if it's ska.\n" +
 			"Example: pub$ play this ska! title$ call me maybe\n" +
@@ -195,7 +200,7 @@ func joinCaller(
 	return s.ChannelVoiceJoin(m.GuildID, targetChannel, false, true)
 }
 
-func playVideoOuter(videoInfo *youtube.Video, s *discordgo.Session, m *discordgo.MessageCreate) error {
+func connectAndPlay(videoInfo *youtube.Video, s *discordgo.Session, m *discordgo.MessageCreate) error {
 	connection, err := joinCaller(s, m)
 	if err != nil {
 		return err
@@ -256,7 +261,7 @@ func playThisSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 		)
 		return
 	}
-	err = playVideoOuter(videoInfo, s, m)
+	err = connectAndPlay(videoInfo, s, m)
 	if err != nil {
 		s.ChannelMessageSend(
 			m.ChannelID,
@@ -288,7 +293,7 @@ func playSomeSka(s *discordgo.Session, m *discordgo.MessageCreate) {
 			continue
 		}
 
-		err = playVideoOuter(videoInfo, s, m)
+		err = connectAndPlay(videoInfo, s, m)
 		if err != nil {
 			s.ChannelMessageSend(
 				m.ChannelID,
@@ -319,7 +324,7 @@ func voiceStateUpdate(s *discordgo.Session, v *discordgo.VoiceStateUpdate) {
 }
 
 func main() {
-	token := strings.Replace(os.Getenv("DISCORD_AUTH"), "\"", "", -1)
+	token := strings.Replace(env.DiscordToken, "\"", "", -1)
 	discord, err := discordgo.New("Bot " + token)
 	if err != nil {
 		log.Printf("unable to create new discord instance")

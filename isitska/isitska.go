@@ -12,12 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
-//Invoker invoker
+const skaConfidenceThreshold = 0.75
+
+//Invoker used to invoke the api endpoints
 type Invoker struct {
 	Endpoint string
 }
 
-//TrackInfo TrackInfo
+//TrackInfo contatins track info from api
 type TrackInfo struct {
 	Prob      float64  `json:"prob"`
 	Title     string   `json:"title"`
@@ -30,7 +32,7 @@ type someSkaResponse struct {
 	Tracks []TrackInfo `json:"tracks"`
 }
 
-//ArtistsStr ArtistsStr
+//ArtistsStr returns artists as a string
 func (t *TrackInfo) ArtistsStr() string {
 	var artistStr strings.Builder
 	artistStr.Grow(len(t.Artists) * 4)
@@ -43,9 +45,9 @@ func (t *TrackInfo) ArtistsStr() string {
 	return artistStr.String()
 }
 
-//IsSka IsSka
+//IsSka returns if track is ska
 func (t *TrackInfo) IsSka() bool {
-	return t.Prob > 0.75
+	return t.Prob > skaConfidenceThreshold
 }
 
 func (i *Invoker) fetchSkaProb(name, artist, trackID string) (TrackInfo, error) {
