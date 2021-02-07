@@ -44,7 +44,7 @@ func init() {
 		Handler: isItSkaCommand, CaseInsensitive: true,
 		Example: "is this ska? title$ call me maybe",
 		Description: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-			"What it does? will return if found track is ska or not.\n",
+			"What it does? will return if found track is ska or not.",
 	})
 	if err != nil {
 		panic(err)
@@ -64,7 +64,7 @@ func init() {
 		Handler: playThisSka, CaseInsensitive: true,
 		Example: "play this ska! title$ call me maybe",
 		Description: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-			"What it does? Will play the given song if it's ska.\n",
+			"What it does? Will play the given song if it's ska.",
 	})
 	if err != nil {
 		panic(err)
