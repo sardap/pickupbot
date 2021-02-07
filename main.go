@@ -41,11 +41,10 @@ func init() {
 
 	err := commandSet.AddCommand(discom.Command{
 		Re:      regexp.MustCompile(isItSkaPattern),
-		Handler: isItSkaCommand, CaseInSense: true,
+		Handler: isItSkaCommand, CaseInsensitive: true,
+		Example: "is this ska? title$ call me maybe",
 		Description: "is this ska? artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-			"What it does? will return if found track is ska or not.\n" +
-			"Example: pub$ is this ska? title$ call me maybe\n" +
-			"Example: pub$ is this ska? url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+			"What it does? will return if found track is ska or not.\n",
 	})
 	if err != nil {
 		panic(err)
@@ -53,7 +52,7 @@ func init() {
 
 	err = commandSet.AddCommand(discom.Command{
 		Re:      regexp.MustCompile(playSomeSkaPattern),
-		Handler: playSomeSka, CaseInSense: true,
+		Handler: playSomeSka, CaseInsensitive: true,
 		Description: "Will join your chat channel and play ska.",
 	})
 	if err != nil {
@@ -62,11 +61,10 @@ func init() {
 
 	err = commandSet.AddCommand(discom.Command{
 		Re:      regexp.MustCompile(playThisSkaPattern),
-		Handler: playThisSka, CaseInSense: true,
+		Handler: playThisSka, CaseInsensitive: true,
+		Example: "play this ska! title$ call me maybe",
 		Description: "play this ska! artist(optional)$ {Artist name here} title$ {track title here} |or| is this ska? url$ {URL HERE}\n" +
-			"What it does? Will play the given song if it's ska.\n" +
-			"Example: pub$ play this ska! title$ call me maybe\n" +
-			"Example: pub$ play this ska! url$ https://open.spotify.com/track/7g96GMqMFfkrzEvDwSIWzQ?si=W4sESgdbSUuCyYncWM4tUA",
+			"What it does? Will play the given song if it's ska.\n",
 	})
 	if err != nil {
 		panic(err)

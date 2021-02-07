@@ -15,7 +15,7 @@ require (
 	github.com/muesli/cache2go v0.0.0-20201208071950-e3e970b4892f
 	github.com/pkg/errors v0.9.1
 	github.com/sardap/discgov v0.0.0-20201102143011-133c67d2682b
-	github.com/sardap/discom v1.1.1
+	github.com/sardap/discom v1.1.2
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
 	google.golang.org/api v0.36.0
